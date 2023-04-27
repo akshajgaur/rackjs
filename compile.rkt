@@ -1,12 +1,28 @@
 #lang racket
 (provide (all-defined-out))
 (require "ast.rkt" "utils.rkt")
-
-;; Arg -> String
+  
+; TODO: need to make this so that it can take a list of params and print them
+; out comma-separated
+(define (arg-list-to-string arg-list) 
+    (match arg-list 
+        ['() ""]
+        [(cons arg '()) 
+            (match arg 
+                [(? symbol?) (symbol->string arg)]
+            )]
+        [(cons arg rest-args) 
+            (match arg 
+                [(? symbol?) (string-append (compile-value arg) ", " (arg-list-to-string rest-args))]
+            )
+        ]))
+  ;; Arg -> String
 (define (compile-value a)
     (match a
         [(? integer?) (number->string a)]
         [(? symbol?) (symbol->string a)]
+        [(? boolean?) (if (equal? a #t) "true" "false")]
+        [(? char?) (format-str "'%s'" (string a))]
         [e (error "cannot compile value " e)]
     ))
 
@@ -43,13 +59,19 @@
   ['add1 (format-str "%s + %s" (compile-e e c) (compile-value 1))]
   ['sub1 (format-str "%s - %s" (compile-e e c) (compile-value 1))]
   )
-
 )
+
+(define (compile-if e1 e2 e3 c)
+  (format-str "%s ? %s : %s" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c))
+)
+
 (define (compile-e e c)
   (match e
     [(Int i)            (compile-value i)]
-    [(App f es)         (compile-app f es c)]
+    [(Bool b)           (compile-value b)]
+    [(Char c)           (compile-value c)]
     [(Prim1 p e)        (compile-prim1 p e c)]
+    [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     ['() ""]
     [_                  (error "Not yet implemented")]
     ; Cut off everything that has not been implemented yet
@@ -64,7 +86,7 @@
     
     ; [(Prim2 p e1 e2)    (compile-prim2 p e1 e2 c)]
     ; [(Prim3 p e1 e2 e3) (compile-prim3 p e1 e2 e3 c)]
-    ; [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
+    
     ; [(Begin e1 e2)      (compile-begin e1 e2 c)]
     ; [(Let x e1 e2)      (compile-let x e1 e2 c)]    
     ))
