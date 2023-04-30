@@ -9,13 +9,10 @@
         ['() ""]
         [(cons arg '()) 
             (match arg 
-                [(? symbol?) (symbol->string arg)]
-            )]
+                [(? symbol?) (symbol->string arg)])]
         [(cons arg rest-args) 
             (match arg 
-                [(? symbol?) (string-append (compile-value arg) ", " (arg-list-to-string rest-args))]
-            )
-        ]))
+                [(? symbol?) (string-append (compile-value arg) ", " (arg-list-to-string rest-args))])]))
   ;; Arg -> String
 (define (compile-value a)
     (match a
@@ -23,17 +20,22 @@
         [(? symbol?) (symbol->string a)]
         [(? boolean?) (if (equal? a #t) "true" "false")]
         [(? char?) (format-str "'%s'" (string a))]
-        [e (error "cannot compile value " e)]
-    ))
+        [e (error "cannot compile value " e)]))
 
 ;; Prog -> Asm
 (define (compile p)
   (match p
     [(Prog ds e)
-     (string-append (compile-defines ds)
-                    (compile-define (Defn 'entry '() e))
-                    "console.log(entry());"
-           )]))
+     (string-append node-imports
+                    js-readline
+                    (compile-defines ds)
+                    ; (compile-define (Defn 'entry '() e))
+                    "async function entry () {\n"
+                    "return "
+                    (compile-e e '())
+                    ";\n}\n\n"
+                    file-conclusion
+                    )]))
 ;; [Listof Defn] -> Asm
 (define (compile-defines ds)
   (match ds
@@ -50,39 +52,40 @@
       (format-str "function %s (%s) {\n return %s;\n}\n"
       (compile-value function-name)
       (arg-list-to-string args)
-      (compile-e body args))
-    ]))
+      (compile-e body args))]))
 
+(define (compile-prim0 p c)
+  (match p 
+    ['read-byte (format-str "await prompt('')")]
+  ))
 
 (define (compile-prim1 p e c)
   (match p 
   ['add1 (format-str "%s + %s" (compile-e e c) (compile-value 1))]
   ['sub1 (format-str "%s - %s" (compile-e e c) (compile-value 1))]
-  )
-)
+  ['zero? (format-str "%s === 0" (compile-e e c))]
+  ['write-byte (format-str "console.log(%s);" (compile-e e c))]
+  ))
 
 (define (compile-if e1 e2 e3 c)
-  (format-str "%s ? %s : %s" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c))
-)
+  (format-str "%s ? %s : %s" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c)))
 
 (define (compile-e e c)
   (match e
     [(Int i)            (compile-value i)]
     [(Bool b)           (compile-value b)]
     [(Char c)           (compile-value c)]
+    [(Prim0 p)          (compile-prim0 p c)]
     [(Prim1 p e)        (compile-prim1 p e c)]
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     ['() ""]
     [_                  (error "Not yet implemented")]
     ; Cut off everything that has not been implemented yet
     
-    ; [(Bool b)           (compile-value b)]
-    ; [(Char c)           (compile-value c)]
     ; [(Eof)              (compile-value eof)]
     ; [(Empty)            (compile-value '())]
     ; [(Var x)            (compile-variable x c)]
     ; [(Str s)            (compile-string s)]
-    ; [(Prim0 p)          (compile-prim0 p c)]
     
     ; [(Prim2 p e1 e2)    (compile-prim2 p e1 e2 c)]
     ; [(Prim3 p e1 e2 e3) (compile-prim3 p e1 e2 e3 c)]

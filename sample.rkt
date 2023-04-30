@@ -1,2 +1,2 @@
 #lang racket
-35
+(if (zero? (read-byte)) #t #f)
