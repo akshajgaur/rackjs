@@ -1,2 +1,2 @@
 #lang racket
-(if (zero? (read-byte)) #t #f)
+(sub1 (if #t 5 #f))

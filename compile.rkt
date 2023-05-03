@@ -59,16 +59,17 @@
     ['read-byte (format-str "await prompt('')")]
   ))
 
+(define (assert-type compiled-value type-str operation)
+  (string-append (format-str "(typeof (%s) == '%s' ? (%s) : (%s))" compiled-value type-str operation "throwError()")))
+
 (define (compile-prim1 p e c)
   (match p 
-  ['add1 (format-str "%s + %s" (compile-e e c) (compile-value 1))]
-  ['sub1 (format-str "%s - %s" (compile-e e c) (compile-value 1))]
-  ['zero? (format-str "%s === 0" (compile-e e c))]
-  ['write-byte (format-str "console.log(%s);" (compile-e e c))]
-  ))
+  ['add1 (let ((compiled-value (compile-e e c))) (assert-type compiled-value "number" (format-str "%s + %s" compiled-value (compile-value 1))))]
+  ['sub1 (let ((compiled-value (compile-e e c))) (assert-type compiled-value "number" (format-str "%s - %s" compiled-value (compile-value 1))))]
+  ['zero? (let ((compiled-value (compile-e e c))) (assert-type compiled-value "number" (format-str "%s === 0" compiled-value)))]
+  ['write-byte (format-str "console.log(%s);" (compile-e e c))]))
 
-(define (compile-if e1 e2 e3 c)
-  (format-str "%s ? %s : %s" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c)))
+(define (compile-if e1 e2 e3 c) (format-str "((%s) ? (%s) : (%s))" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c)))
 
 (define (compile-e e c)
   (match e

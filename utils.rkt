@@ -21,8 +21,11 @@
                                         "\t\t});\n"
                                     "\t});\n"
                                     "}\n\n"
+                                    "function throwError() {\n"
+                                        "\tthrow new Error('err');\n"
+                                    "}\n\n"
 ))
-(define file-conclusion (string-append "entry().then((returnvalue) => {\n"
-                                            "returnvalue == undefined ? '' : console.log(returnvalue);\n"
+(define file-conclusion (string-append  "entry().then((returnvalue) => {\n"
+                                            "\treturnvalue == undefined ? '' : console.log(returnvalue);\n"
                                         "})\n"
 ))
