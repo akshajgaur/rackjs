@@ -75,9 +75,6 @@
     ['() ""]
     [_                  (error "Not yet implemented")]
     ; Cut off everything that has not been implemented yet
-    
-    ; [(Bool b)           (compile-value b)]
-    ; [(Char c)           (compile-value c)]
     ; [(Eof)              (compile-value eof)]
     ; [(Empty)            (compile-value '())]
     ; [(Var x)            (compile-variable x c)]
