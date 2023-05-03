@@ -17,6 +17,20 @@
         (system 
           (string-append "echo \"" compiled-program-string "\"| node > /dev/null 2>&1 ; echo $?"))))))
 
+(define (check-compile-time-error expression expected-error-string)
+  ; (with-handlers ([exn:fail?
+  ;                  (lambda (exn)
+  ;                    #t)])
+  ;   (compile (parse expression)))
+(with-handlers ([exn:fail?
+                 (lambda (exn)
+                   (if (string=? expected-error-string (exn-message exn))
+                       #t
+                       #f))])
+  (compile (parse expression)))
+
+)
+
 ;; abscond tests
 (check-equal? (run '(35)) "35\n")
 (check-equal? (run '(20)) "20\n")
@@ -52,3 +66,11 @@
 (check-equal? (run-and-get-only-exit-code '((sub1 (if #f 1 #f)))) "1\n")
 (check-equal? (run-and-get-only-exit-code '((sub1 (if #t 3 #f)))) "0\n")
 (check-equal? (run '((sub1 (if #t 3 #f)))) "2\n")
+
+;; fraud tests
+(check-equal? (run '((let ((x 3)) x))) "3\n")
+(check-equal? (run '((let ((x 3)) (add1 x)))) "4\n")
+(check-equal? (run '((let ((x 3)) (let ((y 5)) (add1 y))))) "6\n")
+(check-equal? (check-compile-time-error '(x) "undefined variable: 'x") #t)
+(check-equal? (check-compile-time-error '((let ((x 3)) y)) "undefined variable: 'y") #t)
+(check-equal? (check-compile-time-error '((let ((x y)) 3)) "undefined variable: 'y") #t)

@@ -71,6 +71,25 @@
 
 (define (compile-if e1 e2 e3 c) (format-str "((%s) ? (%s) : (%s))" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c)))
 
+(define (compile-let varname value inner-expression cenv)
+  (format-str "((%s) => {return (%s)})(%s)"
+    (compile-value varname) 
+    (compile-e inner-expression (cons varname cenv))
+    (compile-e value cenv)))
+
+(define (compile-variable varname cenv)
+  (begin 
+    (lookup varname cenv) 
+    (compile-value varname)))
+
+(define (lookup x cenv)
+  (match cenv
+    ['() (error "undefined variable:" x)]
+    [(cons y rest)
+     (match (eq? x y)
+       [#t 0]
+       [#f (lookup x rest)])]))
+
 (define (compile-e e c)
   (match e
     [(Int i)            (compile-value i)]
@@ -79,18 +98,19 @@
     [(Prim0 p)          (compile-prim0 p c)]
     [(Prim1 p e)        (compile-prim1 p e c)]
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
+    [(Var x)            (compile-variable x c)]
+    [(Let x e1 e2)      (compile-let x e1 e2 c)]   
     ['() ""]
     [_                  (error "Not yet implemented")]
     ; Cut off everything that has not been implemented yet
     
     ; [(Eof)              (compile-value eof)]
     ; [(Empty)            (compile-value '())]
-    ; [(Var x)            (compile-variable x c)]
+    ; 
     ; [(Str s)            (compile-string s)]
     
     ; [(Prim2 p e1 e2)    (compile-prim2 p e1 e2 c)]
     ; [(Prim3 p e1 e2 e3) (compile-prim3 p e1 e2 e3 c)]
     
     ; [(Begin e1 e2)      (compile-begin e1 e2 c)]
-    ; [(Let x e1 e2)      (compile-let x e1 e2 c)]    
     ))
