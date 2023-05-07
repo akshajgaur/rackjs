@@ -4,7 +4,7 @@
   
 ; TODO: need to make this so that it can take a list of params and print them
 ; out comma-separated
-(define (arg-list-to-string arg-list) 
+(define (param-list-to-string arg-list) 
     (match arg-list 
         ['() ""]
         [(cons arg '()) 
@@ -12,12 +12,25 @@
                 [(? symbol?) (symbol->string arg)])]
         [(cons arg rest-args) 
             (match arg 
-                [(? symbol?) (string-append (compile-value arg) ", " (arg-list-to-string rest-args))])]))
+                [(? symbol?) (string-append (compile-value arg) ", " (param-list-to-string rest-args))])]))
+
+(define (args-list-to-string arg-list) 
+    (match arg-list 
+        ['() ""]
+        [(cons arg '()) 
+            (match arg 
+                [(? string?) arg])]
+        [(cons arg rest-args) 
+            (match arg 
+                [(? string?) (string-append arg ", " (args-list-to-string rest-args))])]))
+
+
   ;; Arg -> String
 (define (compile-value a)
     (match a
         [(? integer?) (number->string a)]
         [(? symbol?) (symbol->string a)]
+        [(? string?) a]
         [(? boolean?) (if (equal? a #t) "true" "false")]
         [(? char?) (format-str "'%s'" (string a))]
         ['() "[]"]
@@ -49,10 +62,15 @@
 (define (compile-define d)
   (match d
     [(Defn function-name args body)
-      (format-str "function %s (%s) {\n return %s;\n}\n"
-      (compile-value function-name)
-      (arg-list-to-string args)
-      (compile-e body args))]))
+      (match (valid-fun function-name) 
+        [#t (format-str "function %s (%s) {\n return %s;\n}\n"
+            (compile-value function-name)
+            (param-list-to-string args)
+            (compile-e body args))]
+        [#f (error "Invalid JavaScript function!")]
+      
+      )
+      ]))
 
 (define (compile-prim0 p c)
   (match p 
@@ -179,10 +197,20 @@
 (define (compile-if e1 e2 e3 c) (format-str "((%s) ? (%s) : (%s))" (compile-e e1 c) (compile-e e2 c) (compile-e e3 c)))
 
 (define (compile-let varname value inner-expression cenv)
-  (format-str "((%s) => {return (%s)})(%s)"
-    (compile-value varname) 
-    (compile-e inner-expression (cons varname cenv))
-    (compile-e value cenv)))
+  (match (valid-fun varname) 
+    [#t  (format-str "((%s) => {return (%s)})(%s)"
+        (compile-value varname) 
+        (compile-e inner-expression (cons varname cenv))
+        (compile-e value cenv))]
+    [#f (error "Invalid variable name in JavaScript!")]
+  ))
+ 
+
+(define (compile-app f es c)
+  (format-str "%s(%s)"
+    (symbol->string f) 
+    (args-list-to-string (compile-es es c)))
+)
 
 (define (compile-variable varname cenv)
   (begin 
@@ -197,6 +225,17 @@
        [#t 0]
        [#f (lookup x rest)])]))
 
+(define (compile-es es c)
+  (match es
+    ['() '()]
+    [(cons exp exprs) (cons (compile-e exp c) (compile-es exprs c))]
+  )
+)
+
+(define (compile-begin e1 e2 c)
+  (format-str "(%s, %s)" (compile-e e1 c) (compile-e e2 c))
+
+)
 (define (compile-e e c)
   (match e
     [(Int i)            (compile-value i)]
@@ -208,14 +247,17 @@
     [(Prim3 p e1 e2 e3) (compile-prim3 p e1 e2 e3 c)]
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     [(Var x)            (compile-variable x c)]
+    [(App f es)         (compile-app f es c)]
     [(Let x e1 e2)      (compile-let x e1 e2 c)]  
+    [(Str s)            (compile-value s)]
+    [(Begin e1 e2)      (compile-begin e1 e2 c)]
     [(Empty)            (compile-value '())] 
     ['() ""]
     [_                  (error "Not yet implemented")]
     ; Cut off everything that has not been implemented yet
     
     ; [(Eof)              (compile-value eof)]
-    ; [(Str s)            (compile-string s)]
+    ; 
     
-    ; [(Begin e1 e2)      (compile-begin e1 e2 c)]
+    ; 
     ))

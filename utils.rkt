@@ -1,6 +1,12 @@
 #lang racket
 (provide (all-defined-out))
 
+(define reserved-funs  
+        (list "break" "case" "catch" "continue" "debugger" "default" 
+        "delete" "do" "else" "finally" "for" "function" "if" "in" 
+        "instanceof" "new" "return" "switch" "this" "throw" "try" 
+        "typeof" "var" "void" "while" "with"))
+
 (define (format-str str . xs)
     (match xs
     ['() (if (string-contains? str "%s") (error "Toom many format specifiers!") str)]
@@ -55,3 +61,28 @@
                                             "\treturnvalue == undefined ? '' : console.log(returnvalue);\n"
                                         "})\n"
 ))
+
+
+(define (valid-keyword fun) 
+   (match (member fun reserved-funs)
+    [#f #t]
+    [_ #f]
+   )
+)
+
+(define (valid-first-char fun) 
+  (let ((l (car (string->list fun))))  
+  
+    (or (char-alphabetic? l) (eq? #\$ l) (eq? #\_ l)))
+  
+)
+
+(define (valid-last-char fun) 
+  (let ((l (car (reverse (string->list fun)))))  
+    (or (char-alphabetic? l) (char-numeric? l) (eq? #\_ l)))
+  )
+  
+(define (valid-fun sym-fun) 
+
+    (let ((fun (symbol->string sym-fun)))
+        (and (valid-keyword fun) (valid-first-char fun) (valid-last-char fun))))
