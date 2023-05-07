@@ -57,7 +57,7 @@
          box unbox empty? cons? box? car cdr
          vector? vector-length string? string-length))
 (define op2
-  '(+ - < = cons eq? make-vector vector-ref make-string string-ref))
+  '(+ - < > = cons eq? make-vector vector-ref make-string string-ref))
 (define op3
   '(vector-set!))
 
