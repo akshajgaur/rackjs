@@ -33,7 +33,7 @@
         [(? string?) a]
         [(? boolean?) (if (equal? a #t) "true" "false")]
         [(? char?) (format-str "'%s'" (string a))]
-        ['() "[]"]
+        ['() "{ type: 'emptycons' }"]
         [e (error "cannot compile value " e)]))
 
 ;; Prog -> Asm
@@ -248,7 +248,7 @@
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     [(Var x)            (compile-variable x c)]
     [(App f es)         (compile-app f es c)]
-    [(Let x e1 e2)      (compile-let x e1 e2 c)]  
+    [(Let x e1 e2)      (compile-let x e1 e2 c)]
     [(Str s)            (compile-value s)]
     [(Begin e1 e2)      (compile-begin e1 e2 c)]
     [(Empty)            (compile-value '())] 

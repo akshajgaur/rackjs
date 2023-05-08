@@ -9,7 +9,7 @@
 
 (define (format-str str . xs)
     (match xs
-    ['() (if (string-contains? str "%s") (error "Toom many format specifiers!") str)]
+    ['() (if (string-contains? str "%s") (error "Too many format specifiers!") str)]
     [(cons x rest) (apply format-str (string-replace str "%s" x #:all? #false) rest)]))
 
 (define higher-order-type-checking (string-append "function typeCheckHigherOrder(thing, type) {\n"
@@ -55,10 +55,67 @@
                                             "}\n"
 ))
 
-(define prequel (string-append node-imports js-readline higher-order-type-checking make-vector-function vector?-function))
+(define format-output-function (string-append "function correctPrint(value, outermostElement, secondElementOfCons) {\n"
+    "\tif (typeof value === 'object' && value.type === 'emptycons') {\n"
+        "\t\tif (outermostElement) {\n"
+            "\t\t\treturn \"'()\";\n"
+        "\t\t}\n"
+        "\t\tif (secondElementOfCons) {\n"
+            "\t\t\treturn \"\";\n"
+        "\t\t}\n"
+        "\t\treturn \"()\";\n"
+    "\t} else if (value === true) {\n"
+        "\t\tif (secondElementOfCons) {\n"
+            "\t\t\treturn \" . #t\";\n"
+        "\t\t}\n"
+        "\t\treturn \"#t\";\n"
+    "\t} else if (value === false) {\n"
+        "\t\tif (secondElementOfCons) {\n"
+            "\t\t\treturn \" . #f\";\n"
+        "\t\t}\n"
+        "\t\treturn \"#f\";\n"
+    "\t} else if (typeof value === 'number') {\n"
+        "\t\tif (secondElementOfCons) {\n"
+            "\t\t\treturn ` . ${value}`;\n"
+        "\t\t}\n"
+        "\t\treturn `${value}`;\n"
+    "\t} else if (typeof value === 'object' && value.type === 'cons') {\n"
+        "\t\tif (outermostElement) {\n"
+            "\t\t\treturn `'(${correctPrint(value.value[0], false, false)}${correctPrint(value.value[1], false, true)})`;\n"
+        "\t\t} else {\n"
+            "\t\t\tif (secondElementOfCons) {\n"
+                "\t\t\t\tif (typeof value === 'object' && value.type === 'cons') {\n"
+                    "\t\t\t\t\treturn ` ${correctPrint(value.value[0], false, false)}${correctPrint(value.value[1], false, true)}`;\n"
+                "\t\t\t\t}\n"
+            "\t\t\t} else {\n"
+                "\t\t\t\treturn `(${correctPrint(value.value[0], false, false)}${correctPrint(value.value[1], false, true)})`;\n"
+            "\t\t\t}\n"
+        "\t\t}\n"
+    "\t} else if (typeof value === 'object' && value.type === 'vector') {\n"
+        "\t\tlet final_string = '';\n"
+        "\t\tif (outermostElement) {\n"
+            "\t\t\tfinal_string = final_string + \"'\";\n"
+        "\t\t}\n"
+        "\t\tfinal_string = final_string + '#(';\n"
+        "\t\tfor (let i = 0; i < value.value.length - 1; i ++) {\n"
+            "\t\t\tfinal_string = final_string + `${correctPrint(value.value[i], false, false)} `;\n"
+        "\t\t}\n"
+        "\t\tif (value.value.length > 0) {\n"
+            "\t\t\tfinal_string = final_string + `${correctPrint(value.value[value.value.length - 1])})`;\n"
+        "\t\t} else {\n"
+            "\t\t\tfinal_string = final_string + ')';\n"
+        "\t\t}\n"
+        "\t\treturn final_string;\n"
+    "\t} else {\n"
+        "\t\treturn value;\n"
+    "\t}\n"
+"}\n\n"
+))
+
+(define prequel (string-append node-imports js-readline higher-order-type-checking make-vector-function vector?-function format-output-function))
 
 (define file-conclusion (string-append  "entry().then((returnvalue) => {\n"
-                                            "\treturnvalue == undefined ? '' : console.log(returnvalue);\n"
+                                            "\treturnvalue == undefined ? '' : console.log(correctPrint(returnvalue, true, false));\n"
                                         "})\n"
 ))
 
