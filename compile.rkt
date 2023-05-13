@@ -30,9 +30,9 @@
     (match a
         [(? integer?) (number->string a)]
         [(? symbol?) (symbol->string a)]
-        [(? string?) a]
+        [(? string?) (format-str "{type: 'string', value: '%s'}" a)]
         [(? boolean?) (if (equal? a #t) "true" "false")]
-        [(? char?) (format-str "'%s'" (string a))]
+        [(? char?) (format-str "{type: 'char', value: '%s'}" (string a))]
         ['() "{ type: 'emptycons' }"]
         [e (error "cannot compile value " e)]))
 
@@ -67,15 +67,11 @@
             (compile-value function-name)
             (param-list-to-string args)
             (compile-e body args))]
-        [#f (error "Invalid JavaScript function!")]
-      
-      )
-      ]))
+        [#f (error "Invalid JavaScript function!")])]))
 
 (define (compile-prim0 p c)
   (match p 
-    ['read-byte (format-str "(await prompt('')).charCodeAt(0)")]
-  ))
+    ['read-byte (format-str "(await prompt('')).charCodeAt(0)")]))
 
 ;; TODO: fix this, it currently duplicates any side effects
 (define (assert-type compiled-value type-str operation)
@@ -101,8 +97,7 @@
       type-str 
       (format-str "%s %s %s" (compile-value temp-var1) operation (compile-value temp-var2))
       (compile-e e1 cenv)
-      (compile-e e2 cenv)
-      )))
+      (compile-e e2 cenv))))
 
 (define (assert-cons-and-perform-operation expression operation cenv)
   (let ((temp-var (gensym 'typecheckvar)))
@@ -119,6 +114,14 @@
         (compile-value temp-var) 
         (compile-value temp-var) 
         (format-str "makeVector(%s, %s)" (compile-value temp-var) (compile-e element cenv))
+        (compile-e vector-length cenv))))
+
+(define (create-string vector-length element cenv)
+  (let ((temp-var (gensym 'typecheckvar)))
+      (format-str "((%s) => {return (typeof (%s) === 'number' ? (%s) : throwError() )})(%s)"
+        (compile-value temp-var) 
+        (compile-value temp-var) 
+        (format-str "makeString(%s, %s)" (compile-value temp-var) (compile-e element cenv))
         (compile-e vector-length cenv))))
 
 (define (assert-box-and-perform-operation expression operation cenv)
@@ -143,8 +146,22 @@
       (compile-value index-value) 
       (format-str "%s.value[%s]" (compile-value vector-name) (compile-value index-value))
       (compile-e vector-expression cenv)
-      (compile-e index cenv)
-      )))
+      (compile-e index cenv))))
+
+(define (string-ref string-expression index cenv)
+  (let ((string-name (gensym 'stringname)) (index-value (gensym 'indexvalue)))
+    (format-str "((%s, %s) => {return (typeCheckHigherOrder(%s, 'string') && typeof (%s) === 'number' && (%s.value.length > %s && %s >= 0)) ? (%s) : throwError() })(%s, %s)"
+      (compile-value string-name) 
+      (compile-value index-value) 
+
+      (compile-value string-name) 
+      (compile-value index-value) 
+      (compile-value string-name) 
+      (compile-value index-value) 
+      (compile-value index-value) 
+      (format-str "%s.value[%s]" (compile-value string-name) (compile-value index-value))
+      (compile-e string-expression cenv)
+      (compile-e index cenv))))
 
 (define (vector-set vector-expression index new-value cenv)
   (let ((vector-name (gensym 'typecheckvar)) (index-value (gensym 'typecheckvar)) (filler-parameter (gensym 'preventdefaultreturn)))
@@ -159,8 +176,7 @@
       (compile-value index-value) 
       (format-str "((%s) => {return undefined;})(%s.value[%s] = (%s))" (compile-value filler-parameter) (compile-value vector-name) (compile-value index-value) (compile-e new-value cenv))
       (compile-e vector-expression cenv)
-      (compile-e index cenv)
-      )))
+      (compile-e index cenv))))
 
 (define (compile-prim1 p e c)
   (match p 
@@ -173,7 +189,10 @@
   ['unbox (assert-box-and-perform-operation e ".value" c)]
   ['car (assert-cons-and-perform-operation e "[0]" c)]
   ['cdr (assert-cons-and-perform-operation e "[1]" c)]
-  ['vector? (format-str "isVector(%s)" (compile-e e c))]
+  ['vector? (format-str "isHigherOrderType(%s, 'vector')" (compile-e e c))]
+  ['box? (format-str "isHigherOrderType((%s), 'box')" (compile-e e c))]
+  ['cons? (format-str "isHigherOrderType((%s), 'cons')" (compile-e e c))]
+  ['char? (format-str "isHigherOrderType((%s), 'char')" (compile-e e c))]
 ))
 
 (define (compile-prim2 p e1 e2 c)
@@ -186,7 +205,9 @@
     ['= (assert-type-and-perform-operation-op2 e1 e2 "number" "===" c)]
     ['eq? (format-str "%s === %s" (compile-e e1 c) (compile-e e2 c))]
     ['make-vector (create-vector e1 e2 c)]
+    ['make-string (create-string e1 e2 c)]
     ['vector-ref (vector-ref e1 e2 c)]
+    ['string-ref (string-ref e1 e2 c)]
 ))
 
 (define (compile-prim3 p e1 e2 e3 c)

@@ -25,5 +25,25 @@
 ; (cons (cons 1 2) 3)
 
 ; (make-vector 3 (cons 1 2))
+; 35
+; (if #t 4 7)
+; (write-byte 97)
+; (let ((a (+ 1 (+ 2 3)))) (if (cons? a) 3 a))
+; (let ((a 4)) (vector-set! a 1 2))
+; (make-string 2 3)
 
-(let ((a (make-vector 5 1))) (begin (vector-set! a 1 (cons 1 (cons 2 #f))) a))
+; (let ((a (make-vector 5 1))) (begin (vector-set! a 1 (cons 1 (cons 2 #f))) a))
+; (let ((v (make-vector 3 #t)))
+;     (begin (vector-set! v 1 3)
+;            v))
+
+; (let ((a "abc")) a)
+; (cons (box 3) (cons 1 '()))
+; 20
+
+; (box 3)
+; (let ((a (make-string 4 #\g))) a)
+; (let ((a (make-string 4 #\b))) (string-ref a 3))
+(string-ref (make-string 2 #\a) 1)
+; (make-string 5 #\a)
+; "abc"
