@@ -44,6 +44,7 @@
 ; (box 3)
 ; (let ((a (make-string 4 #\g))) a)
 ; (let ((a (make-string 4 #\b))) (string-ref a 3))
-(string-ref (make-string 2 #\a) 1)
+; (string-ref (make-string 2 #\a) 1)
+35
 ; (make-string 5 #\a)
 ; "abc"
