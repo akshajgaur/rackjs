@@ -83,6 +83,5 @@
   )
   
 (define (valid-fun sym-fun) 
-
     (let ((fun (symbol->string sym-fun)))
         (and (valid-keyword fun) (valid-first-char fun) (valid-last-char fun))))

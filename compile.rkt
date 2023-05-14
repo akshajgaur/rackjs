@@ -41,8 +41,8 @@
   (match p
     [(Prog ds e)
      (string-append prequel 
-                    (compile-defines ds)
-                    ; (compile-define (Defn 'entry '() e))
+                    ;; (compile-defines ds)
+                    ;;(compile-define (Defn 'entry '() e))
                     "async function entry () {\n"
                     "return "
                     (compile-e e '())
@@ -234,8 +234,17 @@
 
 (define (compile-begin e1 e2 c)
   (format-str "(%s, %s)" (compile-e e1 c) (compile-e e2 c))
-
 )
+
+(define (compile-lam f xs e c)
+
+  (format-str "((%s) => {return (%s)})"
+          (param-list-to-string xs) 
+          (compile-e e c)
+  )
+    
+  )
+
 (define (compile-e e c)
   (match e
     [(Int i)            (compile-value i)]
@@ -251,13 +260,8 @@
     [(Let x e1 e2)      (compile-let x e1 e2 c)]  
     [(Str s)            (compile-value s)]
     [(Begin e1 e2)      (compile-begin e1 e2 c)]
+    [(Lam f xs e)       (compile-lam f xs e c)]
     [(Empty)            (compile-value '())] 
     ['() ""]
     [_                  (error "Not yet implemented")]
-    ; Cut off everything that has not been implemented yet
-    
-    ; [(Eof)              (compile-value eof)]
-    ; 
-    
-    ; 
     ))
