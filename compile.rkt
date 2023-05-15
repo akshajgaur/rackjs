@@ -1,8 +1,7 @@
 #lang racket
 (provide (all-defined-out))
 (require "ast.rkt"
-         "utils.rkt"
-         "fv.rkt")
+         "utils.rkt")
 
 #| Convert a list of symbols to its correct parameter list in JavaScript |#
 (define (param-list-to-string arg-list)
@@ -293,4 +292,4 @@
     [(Begin e1 e2) (compile-begin e1 e2 c)]
     [(Empty) (compile-value '())]
     ['() ""]
-    [n n]))
+))
