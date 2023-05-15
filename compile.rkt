@@ -248,27 +248,7 @@
 #| Compile function applications |#
 (define (compile-app e es c)
   (match e
-    ;; Normal application for pre-defined functions
-    ;; Applications for lambdas
-    [(Lam f xs e)
-     (let ([fvs (fv e)])
-       (format-str "((%s) => %s(%s)) ((%s) => (%s))"
-                   (symbol->string f)
-                   (symbol->string f)
-                   (args-list-to-string (compile-es es (append c (append xs fvs))))
-                   (args-list-to-string (map symbol->string xs))
-                   (compile-e e (append fvs xs))))]
-    [(App g e) (compile-app (App (compile-e g c) (append es e)) c)]
-    
     [(Var x) (format-str "%s(%s)" (symbol->string x) (args-list-to-string (compile-es es c)))]))
-(define (compile-lam f xs e c)
- (let ([fvs (fv e)])
-   (format-str "((%s) => %s()) ((%s) => (%s))"
-                   (symbol->string f)
-                   (symbol->string f)
-                   (param-list-to-string xs)
-                   (compile-e e (append (append c fvs) xs)))))
-
 
 #| Compile a variable |#
 (define (compile-variable varname cenv)
@@ -311,7 +291,6 @@
     [(Let x e1 e2) (compile-let x e1 e2 c)]
     [(Str s) (compile-value s)]
     [(Begin e1 e2) (compile-begin e1 e2 c)]
-    [(Lam f xs e) (compile-lam f xs e c)]
     [(Empty) (compile-value '())]
     ['() ""]
     [n n]))

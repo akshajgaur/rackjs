@@ -1,6 +1,6 @@
 #lang racket
 (provide (all-defined-out))
-#| List of reserved keywords for functions and variable names in JavaScript |# 
+#| List of reserved keywords for functions and variable names in JavaScript |#
 (define reserved-funs
   (list "break"
         "case"
@@ -29,14 +29,13 @@
         "while"
         "with"))
 
-#| Create a format string given a string and parameters to the format string |# 
+#| Create a format string given a string and parameters to the format string |#
 (define (format-str str . xs)
   (match xs
     ['() (if (string-contains? str "%s") (error "Too many format specifiers!") str)]
     [(cons x rest) (apply format-str (string-replace str "%s" x #:all? #false) rest)]))
 
-
-#| Function in JavaScript to check type of higher order objects |# 
+#| Function in JavaScript to check type of higher order objects |#
 (define higher-order-type-checking
   (string-append "function typeCheckHigherOrder(thing, type) {\n"
                  "\tif (typeof thing === 'object' && thing.type == type) {\n"
@@ -203,7 +202,7 @@
   (let ([l (car (reverse (string->list fun)))])
     (or (char-alphabetic? l) (char-numeric? l) (eq? #\_ l))))
 
-(define (valid-fun sym-fun)
 
+(define (valid-fun sym-fun)
   (let ([fun (symbol->string sym-fun)])
     (and (valid-keyword fun) (valid-first-char fun) (valid-last-char fun))))
