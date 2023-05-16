@@ -208,7 +208,26 @@
     ['vector? (format-str "isHigherOrderType(%s, 'vector')" (compile-e e c))]
     ['box? (format-str "isHigherOrderType((%s), 'box')" (compile-e e c))]
     ['cons? (format-str "isHigherOrderType((%s), 'cons')" (compile-e e c))]
-    ['char? (format-str "isHigherOrderType((%s), 'char')" (compile-e e c))]))
+    ['char? (format-str "isHigherOrderType((%s), 'char')" (compile-e e c))]
+    ['char->integer (compile-char-int e c)]
+    ['integer->char (compile-int-char e c)]))
+
+(define (compile-char-int expression cenv)
+  (let ([temp-var (gensym 'typecheckvar)])
+    (format-str "((%s) => {return (isHigherOrderType(%s, 'char') ? (%s) : throwError() )})(%s)"
+                (compile-value temp-var)
+                (compile-value temp-var)
+                (format-str "%s.value.charCodeAt()" (compile-value temp-var))
+                (compile-e expression cenv))))
+
+(define (compile-int-char expression cenv)
+  (let ([temp-var (gensym 'typecheckvar)])
+    (format-str
+     "((%s) => {return ((typeof %s == 'number') ? ({type: 'char', value: %s}) : throwError() )})(%s)"
+     (compile-value temp-var)
+     (compile-value temp-var)
+     (format-str "String.fromCharCode(%s)" (compile-value temp-var))
+     (compile-e expression cenv))))
 
 #| Compile prim2 operations |#
 (define (compile-prim2 p e1 e2 c)
