@@ -64,12 +64,3 @@
 (struct Let   (x e1 e2)    #:prefab)
 (struct Var   (x)          #:prefab)
 (struct App   (e es)       #:prefab)
-(struct Lam   (f xs e)     #:prefab)
-(struct Match (e ps es)    #:prefab)
-
-(struct PVar  (x)          #:prefab)
-(struct PWild ()           #:prefab)
-(struct PLit  (x)          #:prefab)
-(struct PBox  (p)          #:prefab)
-(struct PCons (p1 p2)      #:prefab)
-(struct PAnd  (p1 p2)      #:prefab)

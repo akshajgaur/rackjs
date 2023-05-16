@@ -166,7 +166,9 @@
      (compile-value string-name)
      (compile-value index-value)
      (compile-value index-value)
-     (format-str "%s.value[%s]" (compile-value string-name) (compile-value index-value))
+     (format-str "{type: 'char', value: %s.value[%s]}"
+                 (compile-value string-name)
+                 (compile-value index-value))
      (compile-e string-expression cenv)
      (compile-e index cenv))))
 
@@ -210,8 +212,12 @@
     ['cons? (format-str "isHigherOrderType((%s), 'cons')" (compile-e e c))]
     ['char? (format-str "isHigherOrderType((%s), 'char')" (compile-e e c))]
     ['char->integer (compile-char-int e c)]
-    ['integer->char (compile-int-char e c)]))
+    ['integer->char (compile-int-char e c)]
+    ['string? (format-str "isHigherOrderType(%s, 'string')" (compile-e e c))]
+    ['vector-length (higher-order-length e "vector" c)]
+    ['string-length (higher-order-length e "string" c)]))
 
+#| Compile code to convert char to integer|#
 (define (compile-char-int expression cenv)
   (let ([temp-var (gensym 'typecheckvar)])
     (format-str "((%s) => {return (isHigherOrderType(%s, 'char') ? (%s) : throwError() )})(%s)"
@@ -220,6 +226,7 @@
                 (format-str "%s.value.charCodeAt()" (compile-value temp-var))
                 (compile-e expression cenv))))
 
+#| Compile code to convert integer to char|#
 (define (compile-int-char expression cenv)
   (let ([temp-var (gensym 'typecheckvar)])
     (format-str
@@ -228,6 +235,17 @@
      (compile-value temp-var)
      (format-str "String.fromCharCode(%s)" (compile-value temp-var))
      (compile-e expression cenv))))
+
+#| Compile code for vector-length and string-length|#
+(define (higher-order-length expr type cenv)
+  (let ([temp-var (gensym 'typecheckvar)])
+    (format-str
+     "((%s) => {return (isHigherOrderType(%s, '%s') ? %s.value.length : throwError() )})(%s)"
+     (compile-value temp-var)
+     (compile-value temp-var)
+     type
+     (compile-value temp-var)
+     (compile-e expr cenv))))
 
 #| Compile prim2 operations |#
 (define (compile-prim2 p e1 e2 c)
@@ -310,5 +328,4 @@
     [(Str s) (compile-value s)]
     [(Begin e1 e2) (compile-begin e1 e2 c)]
     [(Empty) (compile-value '())]
-    ['() ""]
-))
+    ['() ""]))
